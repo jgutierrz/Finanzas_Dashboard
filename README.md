@@ -1,28 +1,19 @@
-finanzas-dashboard/
-│
-├── data/                  # Datos locales (NO subir a GitHub)
-│   ├── raw/               # Datos crudos desde Notion
-│   └── processed/         # Datos limpios
-│
-├── src/                   # Código fuente
-│   ├── __init__.py
-│   │
-│   ├── config.py         # Tokens, config general
-│   │
-│   ├── notion_api.py     # Conexión con Notion
-│   ├── extractor.py      # Extracción de datos
-│   ├── transform.py      # Limpieza y transformación
-│   ├── analysis.py       # Lógica financiera
-│   │
-│   └── utils.py          # Funciones auxiliares
-│
-├── app/                  # Dashboard
-│   └── app.py
-│
-├── scripts/              # Scripts ejecutables
-│   └── run_pipeline.py
-│
-├── requirements.txt
-├── .env                  # Tokens (NO subir)
-├── .gitignore
-└── README.md
+# 📊 Finanzas Dashboard
+
+Proyecto de análisis y visualización de finanzas personales desarrollado en **Python**.
+
+## 🚀 Descripción
+Este programa permite procesar datos financieros locales para generar dashboards interactivos y reportes de gastos/ingresos.
+
+## 🛠️ Tecnologías utilizadas
+* **Lenguaje:** Python 3.x
+* **Librerías principales:** Pandas, Matplotlib/Seaborn (o las que uses).
+* **Editor:** Visual Studio Code.
+
+## 📦 Instalación y Uso
+1. Clona el repositorio: `git clone https://github.com/jgutierrz/Finanzas_Dashboard.git`
+2. Instala las dependencias: `pip install -r requirements.txt` (si tienes uno).
+3. Ejecuta el script principal: `python main.py`
+
+## 🔒 Privacidad
+Este repositorio **no contiene datos reales**. Los archivos fuente de datos (.csv) están excluidos mediante `.gitignore` por seguridad.
