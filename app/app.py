@@ -7,7 +7,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import streamlit as st
 import pandas as pd
 
-from src.analysis import detectar_alertas
+from domain.finanzas.metrics import detectar_alertas
 from scripts.update_data import actualizar_datos  # 🔥 BOTÓN
 
 # -------------------------
