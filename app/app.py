@@ -9,6 +9,7 @@ import pandas as pd
 
 from domain.finanzas.metrics import detectar_alertas
 from scripts.update_data import actualizar_datos  # 🔥 BOTÓN
+from exporters.excel_exporter import exportar_finanzas_excel
 
 # -------------------------
 # ⚙️ CONFIG
@@ -60,19 +61,40 @@ df["flujo"] = df["monto"]
 df = df[~df["tipo"].str.contains("Transfer", case=False, na=False)]
 
 # -------------------------
-# 🎯 FILTROS
+# 🎯 FILTROS POR RANGO DE FECHAS
 # -------------------------
 años = sorted(df["año"].unique(), reverse=True)
 año_seleccionado = st.selectbox("Selecciona año", años)
 
-df_año = df[df["año"] == año_seleccionado]
+# Filtrar por año
+df_año = df[df["año"] == año_seleccionado].copy()
 
-meses = sorted(df_año["mes"].unique(), reverse=True)
-mes_seleccionado = st.selectbox("Selecciona mes", meses)
+# Fechas mínima y máxima del año
+fecha_min = df_año["fecha"].min().date()
+fecha_max = df_año["fecha"].max().date()
 
-df_filtrado = df_año[df_año["mes"] == mes_seleccionado]
-df_gastos = df_año[df_año["monto"] < 0]
+# Selector de rango de fechas
+rango_fechas = st.date_input(
+    "Selecciona rango de fechas",
+    value=(fecha_min, fecha_max),
+    min_value=fecha_min,
+    max_value=fecha_max
+)
 
+# Validar selección
+if isinstance(rango_fechas, tuple) and len(rango_fechas) == 2:
+    fecha_inicio, fecha_fin = rango_fechas
+else:
+    fecha_inicio = fecha_fin = fecha_min
+
+# Filtrar por rango
+df_filtrado = df_año[
+    (df_año["fecha"].dt.date >= fecha_inicio) &
+    (df_año["fecha"].dt.date <= fecha_fin)
+].copy()
+
+# Gastos del período seleccionado
+df_gastos = df_filtrado[df_filtrado["monto"] < 0]
 # -------------------------
 # 💰 KPIs
 # -------------------------
@@ -170,7 +192,7 @@ tab1, tab2 = st.tabs(["📅 Mensual", "📊 Anual"])
 # =========================
 with tab1:
 
-    st.subheader(f"📂 Categorías - {mes_seleccionado}")
+    st.subheader(f"📂 Categorías - {fecha_inicio} al {fecha_fin}")
 
     gastos_categoria = df_filtrado[df_filtrado["monto"] < 0] \
         .groupby("categoria")["monto"].sum().sort_values()
@@ -279,4 +301,31 @@ with tab2:
 # -------------------------
 st.subheader("📋 Movimientos")
 
+# Botón para exportar y descargar Excel directamente
+col_export1, col_export2 = st.columns([1, 4])
+
+with col_export1:
+    try:
+        # Generar archivo temporal en dist/
+        archivo = exportar_finanzas_excel(df)
+
+        # Leer el archivo en memoria
+        with open(archivo, "rb") as f:
+            excel_bytes = f.read()
+
+        # Nombre sugerido para descarga
+        nombre_descarga = f"finanzas_{fecha_inicio}_{fecha_fin}.xlsx"
+
+        # Botón de descarga
+        st.download_button(
+            label="📥 Descargar Excel",
+            data=excel_bytes,
+            file_name=nombre_descarga,
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+
+    except Exception as e:
+        st.error(f"Error al generar Excel: {e}")
+
+# Mostrar tabla
 st.dataframe(df_filtrado.sort_values(by="fecha", ascending=False))
