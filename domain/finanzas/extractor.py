@@ -81,10 +81,10 @@ def extract_rows(data, categorias_dict=None):
         # -------------------------
         categoria_id = get_relation_id(props["Categorías"])
 
-        categoria_nombre = "Sin categoría"
+        categoria_nombre = "No clasificado"
 
         if categoria_id and categorias_dict:
-            categoria_nombre = categorias_dict.get(categoria_id, "Sin categoría")
+            categoria_nombre = categorias_dict.get(categoria_id, "No clasificado")
 
         # -------------------------
         # 🧾 ROW

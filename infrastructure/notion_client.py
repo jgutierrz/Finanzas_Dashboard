@@ -13,8 +13,8 @@ class NotionClient:
             "Content-Type": "application/json"
         }
 
-    def query_database(self, database_id):
-        url = f"https://api.notion.com/v1/databases/{database_id}/query"
+    def query_database(self, FINANZAS_DB_ID):
+        url = f"https://api.notion.com/v1/databases/{FINANZAS_DB_ID}/query"
 
         all_results = []
         has_more = True
@@ -40,8 +40,8 @@ class NotionClient:
 
         return all_results
 
-    def get_categorias(self, database_id):
-        results = self.query_database(database_id)
+    def get_categorias(self, FINANZAS_DB_ID):
+        results = self.query_database(FINANZAS_DB_ID)
 
         categorias = {}
 
@@ -53,3 +53,36 @@ class NotionClient:
                 continue
 
         return categorias
+    
+    def get_personal(self, FINANZAS_DB_ID):
+        """
+        Obtiene la base Personal y devuelve un diccionario:
+        {id_del_registro: nombre_de_la_persona}
+        """
+        results = self.query_database(FINANZAS_DB_ID)
+
+        personal = {}
+
+        for item in results:
+            try:
+                # Obtener el título de la página (nombre de la persona)
+                props = item["properties"]
+
+                # Buscar la propiedad de tipo "title"
+                nombre = ""
+                for _, prop in props.items():
+                    if prop["type"] == "title":
+                        nombre = "".join(
+                            x.get("plain_text", "")
+                            for x in prop.get("title", [])
+                        )
+                        break
+
+                # Guardar en diccionario: {id: nombre}
+                personal[item["id"]] = nombre
+
+            except Exception:
+                # Si algún registro tiene problemas, no detener el proceso
+                pass
+
+        return personal

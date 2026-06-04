@@ -1,5 +1,5 @@
 from infrastructure.notion_client import NotionClient
-from infrastructure.config import DATABASE_ID, CATEGORIAS_DB_ID
+from infrastructure.config import FINANZAS_DB_ID, CATEGORIAS_DB_ID
 from domain.finanzas.extractor import extract_rows
 
 
@@ -10,7 +10,7 @@ def obtener_finanzas():
     client = NotionClient()
 
     # Consultar Notion
-    results = client.query_database(DATABASE_ID)
+    results = client.query_database(FINANZAS_DB_ID)
     categorias = client.get_categorias(CATEGORIAS_DB_ID)
 
     # Mantener compatibilidad con extract_rows()
