@@ -1,116 +1,259 @@
+from __future__ import annotations
+
+from typing import Any
+
 import pandas as pd
 
-# -------------------------
-# 🧩 HELPERS
-# -------------------------
-def get_number(prop):
+
+# =========================================================
+# HELPERS
+# =========================================================
+
+def get_number(prop: dict[str, Any] | None) -> float | None:
+    """
+    Extrae un número desde una propiedad Number o Formula.
+    """
     if not prop:
         return None
 
-    if prop["type"] == "number":
+    prop_type = prop.get("type")
+
+    if prop_type == "number":
         return prop.get("number")
 
-    elif prop["type"] == "formula":
+    if prop_type == "formula":
         formula = prop.get("formula", {})
+
         if formula.get("type") == "number":
             return formula.get("number")
 
     return None
 
 
-def get_title(prop):
-    if prop["type"] == "title" and prop["title"]:
-        return prop["title"][0]["plain_text"]
-    return ""
+def get_title(prop: dict[str, Any] | None) -> str:
+    """
+    Extrae el texto completo de una propiedad Title.
+    """
+    if not prop:
+        return ""
+
+    if prop.get("type") != "title":
+        return ""
+
+    bloques = prop.get("title", [])
+
+    return "".join(
+        bloque.get("plain_text", "")
+        for bloque in bloques
+    )
 
 
-def get_select(prop):
-    if prop["type"] == "select" and prop["select"]:
-        return prop["select"]["name"]
+def get_select(prop: dict[str, Any] | None) -> str | None:
+    """
+    Extrae el valor de una propiedad Select.
+    """
+    if not prop:
+        return None
+
+    if prop.get("type") == "select":
+        select = prop.get("select")
+
+        if select:
+            return select.get("name")
+
     return None
 
 
-def get_relation_id(prop):
-    if prop["type"] == "relation" and prop["relation"]:
-        return prop["relation"][0]["id"]
+def get_relation_id(prop: dict[str, Any] | None) -> str | None:
+    """
+    Extrae el primer ID de una relación.
+    """
+    if not prop:
+        return None
+
+    if prop.get("type") == "relation":
+        relation = prop.get("relation", [])
+
+        if relation:
+            return relation[0].get("id")
+
     return None
 
 
-def limpiar_tipo(tipo):
-    if tipo:
-        tipo = tipo.replace("🔴", "").replace("🟢", "").replace("💰", "")
-        return tipo.strip()
-    return tipo
+def limpiar_tipo(tipo: str | None) -> str | None:
+    """
+    Elimina emojis utilizados en Notion.
+    """
+    if not tipo:
+        return tipo
+
+    return (
+        tipo.replace("🔴", "")
+        .replace("🟢", "")
+        .replace("💰", "")
+        .strip()
+    )
 
 
-# -------------------------
-# 🚀 FUNCIÓN PRINCIPAL
-# -------------------------
-def extract_rows(data, categorias_dict=None):
+# =========================================================
+# EXTRACTOR PRINCIPAL
+# =========================================================
 
-    rows = []
+def extract_rows(
+    data: dict[str, Any],
+    categorias_dict: dict[str, str] | None = None,
+) -> pd.DataFrame:
+    """
+    Convierte la respuesta de Notion a DataFrame.
+    """
 
-    for item in data["results"]:
-        props = item["properties"]
+    rows: list[dict[str, Any]] = []
 
-        # -------------------------
-        # 📅 FECHA
-        # -------------------------
-        fecha = props["Fecha"]["date"]["start"] if props["Fecha"]["date"] else None
+    for item in data.get("results", []):
 
-        # -------------------------
-        # 🔄 TIPO
-        # -------------------------
-        tipo = limpiar_tipo(get_select(props["Tipo de Movimiento"]))
+        props = item.get("properties", {})
 
-        # -------------------------
-        # 💰 MONTO (prioridad fórmula)
-        # -------------------------
-        monto = get_number(props.get("Monto Ajustado"))
+        # -------------------------------------------------
+        # FECHA
+        # -------------------------------------------------
+
+        fecha_prop = props.get("Fecha")
+
+        fecha = None
+
+        if fecha_prop and fecha_prop.get("date"):
+            fecha = fecha_prop["date"].get("start")
+
+        # -------------------------------------------------
+        # TIPO
+        # -------------------------------------------------
+
+        tipo = limpiar_tipo(
+            get_select(
+                props.get("Tipo de Movimiento")
+            )
+        )
+
+        # -------------------------------------------------
+        # MONTO
+        # Prioridad: Monto Ajustado
+        # -------------------------------------------------
+
+        monto = get_number(
+            props.get("Monto Ajustado")
+        )
 
         if monto is None:
-            monto = get_number(props.get("Monto"))
+            monto = get_number(
+                props.get("Monto")
+            )
 
-        # -------------------------
-        # 📝 DESCRIPCIÓN
-        # -------------------------
-        descripcion = get_title(props["Descripción Movimiento"])
+        # -------------------------------------------------
+        # DESCRIPCIÓN
+        # -------------------------------------------------
 
-        # -------------------------
-        # 🧩 CATEGORÍA (RELATION)
-        # -------------------------
-        categoria_id = get_relation_id(props["Categorías"])
+        descripcion = get_title(
+            props.get("Descripción Movimiento")
+        )
 
-        categoria_nombre = "No clasificado"
+        # -------------------------------------------------
+        # CATEGORÍA
+        # -------------------------------------------------
+
+        categoria_id = get_relation_id(
+            props.get("Categorías")
+        )
+
+        categoria = "No clasificado"
 
         if categoria_id and categorias_dict:
-            categoria_nombre = categorias_dict.get(categoria_id, "No clasificado")
+            categoria = categorias_dict.get(
+                categoria_id,
+                "No clasificado",
+            )
 
-        # -------------------------
-        # 🧾 ROW
-        # -------------------------
-        rows.append({
-            "fecha": fecha,
-            "tipo": tipo,
-            "monto": monto,
-            "descripcion": descripcion,
-            "categoria_id": categoria_id,
-            "categoria": categoria_nombre
-        })
+        # -------------------------------------------------
+        # ROW
+        # -------------------------------------------------
 
-    # -------------------------
-    # 📊 DATAFRAME
-    # -------------------------
+        rows.append(
+            {
+                "fecha": fecha,
+                "tipo": tipo,
+                "monto": monto,
+                "descripcion": descripcion,
+                "categoria_id": categoria_id,
+                "categoria": categoria,
+            }
+        )
+
+    # =====================================================
+    # DATAFRAME
+    # =====================================================
+
     df = pd.DataFrame(rows)
 
-    # limpieza segura
-    df["fecha"] = pd.to_datetime(df["fecha"], errors="coerce")
-    df["monto"] = pd.to_numeric(df["monto"], errors="coerce")
+    if df.empty:
+        return df
 
-    df = df.dropna(subset=["fecha", "monto"])
+    # -----------------------------------------------------
+    # LIMPIEZA
+    # -----------------------------------------------------
 
-    # columnas derivadas
-    df["mes"] = df["fecha"].dt.to_period("M").astype(str)
+    df["fecha"] = pd.to_datetime(
+        df["fecha"],
+        errors="coerce",
+    )
+
+    df["monto"] = pd.to_numeric(
+        df["monto"],
+        errors="coerce",
+    )
+
+    df = df.dropna(
+        subset=[
+            "fecha",
+            "monto",
+        ]
+    )
+
+    # -----------------------------------------------------
+    # COLUMNAS DERIVADAS
+    # -----------------------------------------------------
+
     df["año"] = df["fecha"].dt.year
+
+    df["mes_num"] = df["fecha"].dt.month
+
+    df["mes"] = (
+        df["fecha"]
+        .dt.to_period("M")
+        .astype(str)
+    )
+
+    df["mes_nombre"] = (
+        df["fecha"]
+        .dt.strftime("%B")
+    )
+
+    df["trimestre"] = (
+        "T"
+        + df["fecha"]
+        .dt.quarter.astype(str)
+    )
+
+    # Flujo financiero (+ ingresos / - gastos)
+    df["flujo"] = df["monto"]
+    # -----------------------------------------------------
+    # ORDEN
+    # -----------------------------------------------------
+
+    df = (
+        df.sort_values(
+            by="fecha",
+            ascending=False,
+        )
+        .reset_index(drop=True)
+    )
 
     return df

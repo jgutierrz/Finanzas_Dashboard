@@ -1,5 +1,5 @@
-from pathlib import Path
 import sys
+from pathlib import Path
 
 # Agregar la raíz del proyecto al PYTHONPATH
 ROOT = Path(__file__).resolve().parents[2]
@@ -10,14 +10,13 @@ if str(ROOT) not in sys.path:
 import os
 
 # ✅ ya no dependes de esto si usas -m, pero lo dejamos por compatibilidad
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-import streamlit as st
 import pandas as pd
+import streamlit as st
 
-from domain.finanzas.metrics import detectar_alertas
-from scripts.update_data import actualizar_datos  # 🔥 BOTÓN
 from exporters.excel_exporter import exportar_finanzas_excel
+from scripts.update_data import actualizar_datos  # 🔥 BOTÓN
 
 # -------------------------
 # ⚙️ CONFIG
@@ -36,7 +35,6 @@ col_btn, col_info = st.columns([1, 3])
 
 with col_btn:
     if st.button("🔄 Actualizar datos") and not st.session_state.actualizando:
-
         st.session_state.actualizando = True
 
         with st.spinner("Actualizando datos desde Notion..."):
@@ -52,12 +50,13 @@ with col_btn:
 # -------------------------
 # 📥 Cargar datos
 # -------------------------
-ruta_datos = Path("data/processed/datos.csv")
+ROOT = Path(__file__).resolve().parents[2]
+DATA_DIR = ROOT / "data" / "processed"
+ruta_datos = DATA_DIR / "datos.csv"
 
 if not ruta_datos.exists():
-
     st.warning(
-        "No existen datos. Actualiza primero."
+        "No existen datos. Usa el botón de actualizar para sincronizar desde Notion."
     )
     st.stop()
 
@@ -95,7 +94,7 @@ rango_fechas = st.date_input(
     "Selecciona rango de fechas",
     value=(fecha_min, fecha_max),
     min_value=fecha_min,
-    max_value=fecha_max
+    max_value=fecha_max,
 )
 
 # Validar selección
@@ -106,8 +105,7 @@ else:
 
 # Filtrar por rango
 df_filtrado = df_año[
-    (df_año["fecha"].dt.date >= fecha_inicio) &
-    (df_año["fecha"].dt.date <= fecha_fin)
+    (df_año["fecha"].dt.date >= fecha_inicio) & (df_año["fecha"].dt.date <= fecha_fin)
 ].copy()
 
 # Gastos del período seleccionado
@@ -208,11 +206,14 @@ tab1, tab2 = st.tabs(["📅 Mensual", "📊 Anual"])
 # 📅 TAB MENSUAL
 # =========================
 with tab1:
-
     st.subheader(f"📂 Categorías - {fecha_inicio} al {fecha_fin}")
 
-    gastos_categoria = df_filtrado[df_filtrado["monto"] < 0] \
-        .groupby("categoria")["monto"].sum().sort_values()
+    gastos_categoria = (
+        df_filtrado[df_filtrado["monto"] < 0]
+        .groupby("categoria")["monto"]
+        .sum()
+        .sort_values()
+    )
 
     st.bar_chart(gastos_categoria)
 
@@ -221,10 +222,9 @@ with tab1:
     ingresos_mes = ingresos
     gastos_mes = abs(gastos)
 
-    df_resumen = pd.DataFrame({
-        "Tipo": ["Ingresos", "Gastos"],
-        "Monto": [ingresos_mes, gastos_mes]
-    })
+    df_resumen = pd.DataFrame(
+        {"Tipo": ["Ingresos", "Gastos"], "Monto": [ingresos_mes, gastos_mes]}
+    )
 
     st.bar_chart(df_resumen.set_index("Tipo"))
 
@@ -234,8 +234,7 @@ with tab1:
 with tab2:
     st.subheader("📊 Evolución mensual por categoría")
 
-    tabla = df_gastos.groupby(["mes", "categoria"])["monto"] \
-        .sum().unstack(fill_value=0)
+    tabla = df_gastos.groupby(["mes", "categoria"])["monto"].sum().unstack(fill_value=0)
 
     # -------------------------
     # 🎯 FILTRO DE CATEGORÍAS
@@ -245,7 +244,7 @@ with tab2:
     categorias_sel = st.multiselect(
         "Selecciona categorías",
         categorias_disponibles,
-        default=categorias_disponibles[:5]  # primeras 5 por defecto
+        default=categorias_disponibles[:5],  # primeras 5 por defecto
     )
 
     tabla_filtrada = tabla[categorias_sel]
@@ -253,10 +252,7 @@ with tab2:
     # -------------------------
     # 📊 ORDENAR POR IMPACTO
     # -------------------------
-    orden = st.selectbox(
-        "Ordenar por",
-        ["Mayor gasto total", "Alfabético"]
-    )
+    orden = st.selectbox("Ordenar por", ["Mayor gasto total", "Alfabético"])
 
     if orden == "Mayor gasto total":
         orden_cols = tabla_filtrada.sum().sort_values().index
@@ -274,18 +270,14 @@ with tab2:
     # 📈 OPCIONAL: GRÁFICO
     # -------------------------
     st.line_chart(tabla_filtrada)
-    
-
 
     st.subheader("📈 Tendencia por categoría")
 
-    categoria_sel = st.selectbox(
-        "Categoría",
-        sorted(df_gastos["categoria"].unique())
-    )
+    categoria_sel = st.selectbox("Categoría", sorted(df_gastos["categoria"].unique()))
 
-    df_cat = df_gastos[df_gastos["categoria"] == categoria_sel] \
-        .groupby("mes")["monto"].sum()
+    df_cat = (
+        df_gastos[df_gastos["categoria"] == categoria_sel].groupby("mes")["monto"].sum()
+    )
 
     st.line_chart(df_cat)
 
@@ -297,8 +289,7 @@ with tab2:
     alertas = []
 
     for cat in df_gastos["categoria"].unique():
-        serie = df_gastos[df_gastos["categoria"] == cat] \
-            .groupby("mes")["monto"].sum()
+        serie = df_gastos[df_gastos["categoria"] == cat].groupby("mes")["monto"].sum()
 
         if len(serie) >= 4:
             ultimo = serie.iloc[-1]
@@ -338,7 +329,7 @@ with col_export1:
             label="📥 Descargar Excel",
             data=excel_bytes,
             file_name=nombre_descarga,
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         )
 
     except Exception as e:

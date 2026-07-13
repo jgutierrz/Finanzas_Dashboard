@@ -18,5 +18,5 @@ def obtener_finanzas():
 
     # Convertir a DataFrame
     df = extract_rows(data, categorias)
-
+    
     return df

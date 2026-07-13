@@ -1,14 +1,13 @@
+from openpyxl.formatting.rule import CellIsRule
 from openpyxl.styles import (
-    Font,
-    PatternFill,
     Alignment,
     Border,
+    Font,
+    PatternFill,
     Side,
 )
 from openpyxl.utils import get_column_letter
-from openpyxl.formatting.rule import CellIsRule
 from openpyxl.worksheet.worksheet import Worksheet
-
 
 # =========================================================
 # FORMATOS
@@ -28,7 +27,6 @@ COLUMNAS_MONETARIAS = {
     "Ingresos",
     "Gastos",
     "Balance",
-    "Valor",
     "Promedio mensual",
 }
 
@@ -46,12 +44,13 @@ COLUMNAS_PORCENTAJE = {
 FONT_BASE = Font(
     name="Calibri",
     size=10,
+    color="23364D",
 )
 
 FONT_HEADER = Font(
     name="Calibri",
     size=10,
-    color="FFFFFF",
+    color="23364D",
     bold=True,
 )
 
@@ -63,7 +62,12 @@ def crear_estilos() -> dict:
 
     fill_header = PatternFill(
         fill_type="solid",
-        fgColor="1F4E78",
+        fgColor="DCEAF7",
+    )
+
+    fill_alternating = PatternFill(
+        fill_type="solid",
+        fgColor="F6FAFD",
     )
 
     align_center = Alignment(
@@ -77,14 +81,15 @@ def crear_estilos() -> dict:
     )
 
     border_thin = Border(
-        left=Side(style="thin", color="D9D9D9"),
-        right=Side(style="thin", color="D9D9D9"),
-        top=Side(style="thin", color="D9D9D9"),
-        bottom=Side(style="thin", color="D9D9D9"),
+        left=Side(style="thin", color="D0D7DE"),
+        right=Side(style="thin", color="D0D7DE"),
+        top=Side(style="thin", color="D0D7DE"),
+        bottom=Side(style="thin", color="D0D7DE"),
     )
 
     return {
         "fill_header": fill_header,
+        "fill_alternating": fill_alternating,
         "font_header": FONT_HEADER,
         "align_center": align_center,
         "align_right": align_right,
@@ -96,6 +101,7 @@ def crear_estilos() -> dict:
 # FORMATO GENERAL DE HOJAS
 # =========================================================
 
+
 def formatear_hoja(
     ws: Worksheet,
     estilos: dict,
@@ -106,6 +112,7 @@ def formatear_hoja(
     """
 
     fill_header = estilos["fill_header"]
+    fill_alternating = estilos["fill_alternating"]
     font_header = estilos["font_header"]
     align_center = estilos["align_center"]
     align_right = estilos["align_right"]
@@ -115,7 +122,7 @@ def formatear_hoja(
     # Configuración general
     # -----------------------------------------------------
 
-    ws.sheet_view.zoomScale = 80
+    ws.sheet_view.zoomScale = 90
 
     if header_row > 0:
         ws.freeze_panes = f"A{header_row + 1}"
@@ -132,6 +139,8 @@ def formatear_hoja(
 
             if cell.row != header_row:
                 cell.font = FONT_BASE
+                if cell.row % 2 == 0:
+                    cell.fill = fill_alternating
 
     # -----------------------------------------------------
     # Encabezado
@@ -148,16 +157,11 @@ def formatear_hoja(
     # -----------------------------------------------------
 
     for col_idx, col in enumerate(ws.columns, start=1):
-
-        header = ws.cell(
-            row=header_row,
-            column=col_idx
-        ).value
+        header = ws.cell(row=header_row, column=col_idx).value
 
         max_length = 0
 
         for cell in col:
-
             if cell.row <= header_row:
                 continue
 
@@ -165,10 +169,7 @@ def formatear_hoja(
             # Moneda
             # ---------------------------------------------
 
-            if (
-                isinstance(cell.value, (int, float))
-                and header in COLUMNAS_MONETARIAS
-            ):
+            if isinstance(cell.value, (int, float)) and header in COLUMNAS_MONETARIAS:
                 cell.number_format = FORMATO_MONEDA
                 cell.alignment = align_right
 
@@ -176,10 +177,7 @@ def formatear_hoja(
             # Porcentaje
             # ---------------------------------------------
 
-            if (
-                isinstance(cell.value, (int, float))
-                and header in COLUMNAS_PORCENTAJE
-            ):
+            if isinstance(cell.value, (int, float)) and header in COLUMNAS_PORCENTAJE:
                 cell.number_format = FORMATO_PORCENTAJE
                 cell.alignment = align_right
 
@@ -187,10 +185,7 @@ def formatear_hoja(
             # Fecha
             # ---------------------------------------------
 
-            if (
-                header == "fecha"
-                and cell.value is not None
-            ):
+            if header == "fecha" and cell.value is not None:
                 cell.number_format = FORMATO_FECHA
 
             # ---------------------------------------------
@@ -203,15 +198,13 @@ def formatear_hoja(
 
         col_letter = get_column_letter(col_idx)
 
-        ws.column_dimensions[col_letter].width = max(
-            12,
-            min(max_length + 2, 50)
-        )
+        ws.column_dimensions[col_letter].width = max(12, min(max_length + 2, 50))
 
 
 # =========================================================
 # FORMATO CONDICIONAL
 # =========================================================
+
 
 def aplicar_formato_condicional_resumen_mensual(
     ws: Worksheet,
@@ -221,14 +214,11 @@ def aplicar_formato_condicional_resumen_mensual(
     Formato condicional para la hoja Resumen_Mensual.
     """
 
-    col_map = {
-        cell.value: cell.column
-        for cell in ws[header_row]
-    }
+    col_map = {cell.value: cell.column for cell in ws[header_row]}
 
     fill_rojo = PatternFill(
         fill_type="solid",
-        fgColor="FFC7CE",
+        fgColor="FDE2E2",
     )
 
     # -----------------------------------------------------
@@ -236,10 +226,7 @@ def aplicar_formato_condicional_resumen_mensual(
     # -----------------------------------------------------
 
     if "Balance" in col_map:
-
-        col = get_column_letter(
-            col_map["Balance"]
-        )
+        col = get_column_letter(col_map["Balance"])
 
         ws.conditional_formatting.add(
             f"{col}{header_row + 1}:{col}{ws.max_row}",
@@ -255,10 +242,7 @@ def aplicar_formato_condicional_resumen_mensual(
     # -----------------------------------------------------
 
     if "Pct_Gastos" in col_map:
-
-        col = get_column_letter(
-            col_map["Pct_Gastos"]
-        )
+        col = get_column_letter(col_map["Pct_Gastos"])
 
         ws.conditional_formatting.add(
             f"{col}{header_row + 1}:{col}{ws.max_row}",
@@ -274,10 +258,7 @@ def aplicar_formato_condicional_resumen_mensual(
     # -----------------------------------------------------
 
     if "Pct_Ahorro" in col_map:
-
-        col = get_column_letter(
-            col_map["Pct_Ahorro"]
-        )
+        col = get_column_letter(col_map["Pct_Ahorro"])
 
         ws.conditional_formatting.add(
             f"{col}{header_row + 1}:{col}{ws.max_row}",
