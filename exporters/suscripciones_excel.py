@@ -8,6 +8,8 @@ import pandas as pd
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 
+from domain.suscripciones.constants import DIAS_ALERTA
+
 
 def _aplicar_estilo_excel(workbook: Any, df: pd.DataFrame) -> None:
     """Aplica un estilo profesional y sobrio a las hojas exportadas."""
@@ -25,9 +27,7 @@ def _aplicar_estilo_excel(workbook: Any, df: pd.DataFrame) -> None:
 
     colores = {
         "Vencida": PatternFill(fill_type="solid", fgColor="FDE2E2"),
-        "Muy urgente": PatternFill(fill_type="solid", fgColor="FDE2E2"),
-        "Vence mañana": PatternFill(fill_type="solid", fgColor="FFF4CC"),
-        "Próxima": PatternFill(fill_type="solid", fgColor="FCE7C9"),
+        "Vence pronto": PatternFill(fill_type="solid", fgColor="FDE2E2"),
         "Vigente": PatternFill(fill_type="solid", fgColor="EAF7EA"),
     }
 
@@ -55,12 +55,8 @@ def _aplicar_estilo_excel(workbook: Any, df: pd.DataFrame) -> None:
 
                 if dias_num < 0:
                     estado = "Vencida"
-                elif dias_num <= 1:
-                    estado = "Vence mañana"
-                elif dias_num <= 3:
-                    estado = "Muy urgente"
-                elif dias_num <= 7:
-                    estado = "Próxima"
+                elif dias_num <= DIAS_ALERTA:
+                    estado = "Vence pronto"
                 else:
                     estado = "Vigente"
 
@@ -107,7 +103,7 @@ def exportar_suscripciones_excel(
                     len(df),
                     df["Costo_Mensual"].sum() if "Costo_Mensual" in df.columns else 0,
                     df["Costo_Anual"].sum() if "Costo_Anual" in df.columns else 0,
-                    df["Dias_Vencimiento"].lt(31).sum()
+                    df["Dias_Vencimiento"].le(DIAS_ALERTA).sum()
                     if "Dias_Vencimiento" in df.columns
                     else 0,
                     df["Estado_Vencimiento"].eq("Vencida").sum()

@@ -19,6 +19,7 @@ DATA_DIR = ROOT / "data" / "processed"
 from domain.suscripciones.constants import (
     COLUMNAS_ALERTAS,
     COLUMNAS_TABLA,
+    DIAS_ALERTA,
     ESTADOS_VENCIMIENTO,
 )
 from exporters.suscripciones_excel import exportar_suscripciones_excel
@@ -176,17 +177,10 @@ def _aplicar_colores_vencimiento(df: pd.DataFrame) -> pd.DataFrame:
     if "Dias_Vencimiento" in tabla.columns:
         tabla.loc[tabla["Dias_Vencimiento"] < 0, "Estado_Visual"] = "🔴 Vencida"
         tabla.loc[
-            (tabla["Dias_Vencimiento"] >= 0) & (tabla["Dias_Vencimiento"] <= 1),
+            (tabla["Dias_Vencimiento"] >= 0)
+            & (tabla["Dias_Vencimiento"] <= DIAS_ALERTA),
             "Estado_Visual",
-        ] = "🟡 Vence mañana"
-        tabla.loc[
-            (tabla["Dias_Vencimiento"] > 1) & (tabla["Dias_Vencimiento"] <= 3),
-            "Estado_Visual",
-        ] = "🔴 Muy urgente"
-        tabla.loc[
-            (tabla["Dias_Vencimiento"] > 3) & (tabla["Dias_Vencimiento"] <= 7),
-            "Estado_Visual",
-        ] = "🟠 Próxima"
+        ] = "🔴 Vence pronto"
 
     return tabla
 

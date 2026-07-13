@@ -18,6 +18,8 @@ from domain.suscripciones.transform import transformar_suscripciones
 from infrastructure.config import SUSCRIPCIONES_DB_ID
 from infrastructure.notion_client import NotionClient
 
+from domain.suscripciones.status import obtener_estado
+
 # ==========================================================
 # CONFIGURACIÓN
 # ==========================================================
