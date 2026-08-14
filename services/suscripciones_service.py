@@ -14,11 +14,10 @@ from domain.suscripciones.metrics import (
     proximos_vencimientos,
     vencimientos_por_mes,
 )
+from domain.suscripciones.status import obtener_estado
 from domain.suscripciones.transform import transformar_suscripciones
 from infrastructure.config import SUSCRIPCIONES_DB_ID
 from infrastructure.notion_client import NotionClient
-
-from domain.suscripciones.status import obtener_estado
 
 # ==========================================================
 # CONFIGURACIÓN
@@ -103,6 +102,24 @@ def obtener_suscripciones_notion() -> pd.DataFrame:
     df = extraer_suscripciones(df)
     df = transformar_suscripciones(df)
 
+    # ==========================================================
+    # Estado visual de vencimiento
+    # ==========================================================
+
+    estados = df["Fecha_Vencimiento"].apply(obtener_estado)
+
+    df["Dias_Restantes"] = estados.apply(lambda x: x["dias_restantes"])
+
+    df["Estado_Vencimiento"] = estados.apply(lambda x: x["estado"])
+
+    df["Estado_UI"] = estados.apply(lambda x: x["estado_ui"])
+
+    df["Color"] = estados.apply(lambda x: x["color"])
+
+    df["Prioridad"] = estados.apply(lambda x: x["prioridad"])
+
+    df = df.sort_values(["Prioridad", "Dias_Restantes"]).reset_index(drop=True)
+
     return df
 
 
@@ -152,6 +169,27 @@ def cargar_suscripciones(
 
     df = extraer_suscripciones(df)
     df = transformar_suscripciones(df)
+
+    # ==========================================================
+    # Estado de vencimiento
+    # ==========================================================
+
+    estados = df["Fecha_Vencimiento"].apply(obtener_estado)
+
+    df["Dias_Restantes"] = estados.apply(lambda x: x["dias_restantes"])
+
+    df["Estado_Vencimiento"] = estados.apply(lambda x: x["estado"])
+
+    df["Estado_UI"] = estados.apply(lambda x: x["estado_ui"])
+
+    df["Color"] = estados.apply(lambda x: x["color"])
+
+    df["Prioridad"] = estados.apply(lambda x: x["prioridad"])
+
+    df = df.sort_values(
+        by=["Prioridad", "Dias_Restantes"],
+        ascending=[True, True],
+    ).reset_index(drop=True)
 
     return df
 

@@ -53,9 +53,13 @@ def _convertir_tipos(
     ).fillna(0)
 
     # Fecha
-    df["Fecha_Vencimiento"] = pd.to_datetime(
-        df["Fecha_Vencimiento"],
-        errors="coerce",
+
+    df["Fecha_Vencimiento"] = df["Fecha_Vencimiento"].apply(
+        lambda x: pd.to_datetime(
+            x,
+            errors="coerce",
+            utc=True,
+        )
     )
 
     return df

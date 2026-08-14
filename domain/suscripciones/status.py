@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime
+
+import pandas as pd
 
 
 @dataclass(frozen=True)
@@ -21,16 +23,50 @@ ESTADOS = (
 )
 
 
-def obtener_estado(fecha_vencimiento: date) -> dict:
+def obtener_estado(fecha_vencimiento) -> dict:
     """
     Calcula el estado de vencimiento de una suscripción.
 
-    Retorna un diccionario con toda la información necesaria
+    Acepta fechas provenientes de Pandas (Timestamp),
+    datetime o date.
+
+    Retorna un diccionario con la información necesaria
     para la UI y los KPIs.
     """
 
+    # ------------------------------------------------------
+    # Validación de fecha
+    # ------------------------------------------------------
+
+    if pd.isna(fecha_vencimiento):
+        return {
+            "dias_restantes": None,
+            "estado": "Sin fecha",
+            "estado_ui": "⚪ Sin fecha",
+            "icono": "⚪",
+            "color": "#9E9E9E",
+            "prioridad": 99,
+        }
+
+    # ------------------------------------------------------
+    # Normalización de fecha
+    # ------------------------------------------------------
+
+    if isinstance(fecha_vencimiento, pd.Timestamp) or isinstance(
+        fecha_vencimiento, datetime
+    ):
+        fecha_vencimiento = fecha_vencimiento.date()
+
+    # ------------------------------------------------------
+    # Cálculo
+    # ------------------------------------------------------
+
     hoy = date.today()
     dias = (fecha_vencimiento - hoy).days
+
+    # ------------------------------------------------------
+    # Clasificación
+    # ------------------------------------------------------
 
     if dias < 0:
         estado = ESTADOS[0]
@@ -46,6 +82,10 @@ def obtener_estado(fecha_vencimiento: date) -> dict:
 
     else:
         estado = ESTADOS[4]
+
+    # ------------------------------------------------------
+    # Resultado
+    # ------------------------------------------------------
 
     return {
         "dias_restantes": dias,

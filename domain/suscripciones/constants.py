@@ -30,29 +30,31 @@ COLUMNAS_ALERTAS = [
 COLUMNAS_TABLA = [
     "Nombre",
     "Proveedor",
-    "Estado",
+    "Estado",  # Estado de la suscripción
     "Grupo",
     "Fecha_Vencimiento",
-    "Dias_Vencimiento",
+    "Dias_Restantes",
+    "Estado_UI",  # Estado del vencimiento
     "Costo_Mensual",
     "Costo_Anual",
-    "Estado_Vencimiento",
 ]
 
 # ==========================================================
 # ESTADOS DE VENCIMIENTO
 # ==========================================================
 
-ESTADO_VIGENTE = "Vigente"
-ESTADO_PROXIMA = "Próxima"
-ESTADO_VENCE_PRONTO = "Vence pronto"
-ESTADO_VENCIDA = "Vencida"
+ESTADO_VENCIDO = "Vencido"
+ESTADO_URGENTE = "Urgente"
+ESTADO_PROXIMO = "Próximo"
+ESTADO_SEGUIMIENTO = "Seguimiento"
+ESTADO_AL_DIA = "Al día"
 
 ESTADOS_VENCIMIENTO = [
-    ESTADO_VIGENTE,
-    ESTADO_PROXIMA,
-    ESTADO_VENCE_PRONTO,
-    ESTADO_VENCIDA,
+    ESTADO_VENCIDO,
+    ESTADO_URGENTE,
+    ESTADO_PROXIMO,
+    ESTADO_SEGUIMIENTO,
+    ESTADO_AL_DIA,
 ]
 
 # ==========================================================

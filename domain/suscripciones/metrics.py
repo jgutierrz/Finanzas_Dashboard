@@ -19,20 +19,22 @@ def calcular_kpis(
             "total": 0,
             "costo_mensual": 0.0,
             "costo_anual": 0.0,
-            "vencidas": 0,
-            "vence_pronto": 0,
-            "proximas": 0,
-            "vigentes": 0,
+            "vencido": 0,
+            "urgente": 0,
+            "proximo": 0,
+            "seguimiento": 0,
+            "al_dia": 0,
         }
 
     return {
         "total": len(df),
         "costo_mensual": float(df["Costo_Mensual"].sum()),
         "costo_anual": float(df["Costo_Anual"].sum()),
-        "vencidas": int((df["Estado_Vencimiento"] == "Vencida").sum()),
-        "vence_pronto": int((df["Estado_Vencimiento"] == "Vence pronto").sum()),
-        "proximas": int((df["Estado_Vencimiento"] == "Próxima").sum()),
-        "vigentes": int((df["Estado_Vencimiento"] == "Vigente").sum()),
+        "vencido": int((df["Estado_Vencimiento"] == "Vencido").sum()),
+        "urgente": int((df["Estado_Vencimiento"] == "Urgente").sum()),
+        "proximo": int((df["Estado_Vencimiento"] == "Próximo").sum()),
+        "seguimiento": int((df["Estado_Vencimiento"] == "Seguimiento").sum()),
+        "al_dia": int((df["Estado_Vencimiento"] == "Al día").sum()),
     }
 
 
@@ -45,20 +47,19 @@ def obtener_alertas(
     df: pd.DataFrame,
 ) -> dict:
     """
-    Devuelve las suscripciones clasificadas por prioridad.
+    Devuelve las suscripciones que requieren atención,
+    clasificadas por prioridad de vencimiento.
     """
 
     return {
         "vencidas": (
-            df[df["Estado_Vencimiento"] == "Vencida"].sort_values("Fecha_Vencimiento")
+            df[df["Estado_Vencimiento"] == "Vencido"].sort_values("Fecha_Vencimiento")
         ),
         "vence_pronto": (
-            df[df["Estado_Vencimiento"] == "Vence pronto"].sort_values(
-                "Fecha_Vencimiento"
-            )
+            df[df["Estado_Vencimiento"] == "Urgente"].sort_values("Fecha_Vencimiento")
         ),
         "proximas": (
-            df[df["Estado_Vencimiento"] == "Próxima"].sort_values("Fecha_Vencimiento")
+            df[df["Estado_Vencimiento"] == "Próximo"].sort_values("Fecha_Vencimiento")
         ),
     }
 

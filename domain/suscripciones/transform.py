@@ -44,6 +44,16 @@ def _calcular_dias_vencimiento(
 
     df = df.copy()
 
+    df["Fecha_Vencimiento"] = (
+        pd.to_datetime(
+            df["Fecha_Vencimiento"],
+            errors="coerce",
+            utc=True,
+        )
+        .dt.tz_localize(None)
+        .dt.normalize()
+    )
+
     hoy = pd.Timestamp.now().normalize()
 
     df["Dias_Vencimiento"] = (df["Fecha_Vencimiento"] - hoy).dt.days
